@@ -9,12 +9,17 @@ set pwd=%pwd:~0,-1%
 rem ----------------------------------------------------------------------------
 rem ----------------------------------------------------------------------------
 
+for /f "tokens=3* delims= " %%a in ('reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" /v "Personal"') do (set mydocuments=%%a)
+
+set winrt_path=C:\Program Files (x86)\Windows Kits\10\Include\10.0.26100.0\winrt
+set path=%mydocuments%\Embarcadero\Studio\37.0\CatalogRepository\CMake-cb\4.1.1\bin;%path%
+
 set repo_uri=https://github.com/Kitware/VTK.git
-set repo_version=v9.3.1
+set repo_version=23daad7b687725f22b1b5e24e3ac5f1042658c92
 set repo_local=%pwd%\vtk
 set output_dir=%pwd%\build-vtk
 set setup_dir=%pwd%\install
-set patch_file=%pwd%\workarounds\vtk-v9.3.1.diff
+set patch_file=%pwd%\workarounds\vtk-v9.5.2.diff
 
 rem ----------------------------------------------------------------------------
 rem ----------------------------------------------------------------------------
@@ -22,7 +27,7 @@ rem ----------------------------------------------------------------------------
 if exist %repo_local%\ goto :CLONE_DONE
 mkdir %repo_local% || goto :END
 
-git clone --branch %repo_version% --single-branch %repo_uri% %repo_local% || goto :CLONE_ERROR
+git clone --revision %repo_version% --single-branch %repo_uri% %repo_local% || goto :CLONE_ERROR
 
 echo Applying compatibility patch, please see %patch_file% for details.
 
@@ -35,6 +40,10 @@ goto :END
 :CLONE_DONE
 
 rem ----------------------------------------------------------------------------
+
+mkdir "%output_dir%\winrt"
+
+xcopy "%winrt_path%" "%output_dir%\winrt" /E /I /Y
 
 rem Disables the warnings that occur when compiling the library using LLVM-MinGW
 rem for comparison purposes with the new toolchain.
@@ -51,6 +60,7 @@ set CFLAGS=%CFLAGS% -Wno-macro-redefined
 set CFLAGS=%CFLAGS% -Wno-shift-negative-value
 set CFLAGS=%CFLAGS% -Wno-unknown-attributes
 set CFLAGS=%CFLAGS% -Wno-unknown-warning-option
+set CFLAGS=%CFLAGS% -isystem %output_dir%\winrt
 set CXXFLAGS=%CFLAGS%
 
 rem ----------------------------------------------------------------------------
